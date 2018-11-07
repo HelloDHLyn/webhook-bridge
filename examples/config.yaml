@@ -1,0 +1,15 @@
+version: '1'
+
+input_path_prefix: '/webhook'
+input_port: 8080
+
+bridges:
+  - name: 'example-bridge'
+    input:
+      source: 'docker-hub'
+    output:
+      target: 'slack'
+      options:
+        url: 'https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK_URL'
+    converter:
+      name: 'DockerHubToSlack'
