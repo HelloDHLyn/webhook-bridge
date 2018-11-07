@@ -1,7 +1,8 @@
 version: '1'
 
-input_path_prefix: '/webhook'
-input_port: 8080
+server:
+  path_prefix: '/webhook'
+  port: 8080
 
 bridges:
   - name: 'example-bridge'

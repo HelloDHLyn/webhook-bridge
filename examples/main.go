@@ -6,7 +6,7 @@ import (
 )
 
 func main() {
-	bridge.LoadConfiguration("./examples/config.yaml")
+	bridge.LoadConfigurationFromFile("./examples/config.yaml")
 	bridge.RegisterConverter("DockerHubToSlack", func(input interface{}) (interface{}, error) {
 		hubInput := input.(*bridge.DockerHubInput)
 		output := &bridge.SlackOutput{

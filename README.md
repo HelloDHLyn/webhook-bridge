@@ -16,23 +16,24 @@
     - Discord
     - Slack
 
-### Supported Converters
+### Example 1. Simple way (using docker)
 
-  - `func`
+TBD
 
-### Configurations
+### Example 2. Normal way
 
 ```yaml
 ### Version of the configration file template.
 version: '1'
 
 
-### Configs for incoming webhooks.
-# URL path. Path for the bridge named `example-bridge` becomes `/webhook/example-bridge`.
-input_path_prefix: '/webhook'
+### Configure server for incoming webhooks.
+server:
+  # URL path. In the example, path for the bridge named `example-bridge` becomes `/webhook/example-bridge`.
+  path_prefix: '/webhook'
 
-# HTTP port to receive hooks.
-input_port: 8080
+  # HTTP port to receive hooks.
+  port: 8080
 
 
 ### Configs for integrations.
