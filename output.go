@@ -79,3 +79,64 @@ func (p *SlackOutput) Send(options map[string]string) error {
 
 	return nil
 }
+
+/// Discord outgoing webhook.
+/// Reference: https://discordapp.com/developers/docs/resources/webhook
+type DiscordOutput struct {
+	Content    string               `json:"content"`
+	Username   string               `json:"username"`
+	AvartarURL string               `json:"avartal_url"`
+	TTS        bool                 `json:"tts"`
+	File       string               `json:"file"`
+	Embeds     []DiscordOutputEmbed `json:"embeds"`
+}
+
+type DiscordOutputEmbed struct {
+	Title       string                    `json:"title"`
+	Type        string                    `json:"type"`
+	Description string                    `json:"description"`
+	URL         string                    `json:"url"`
+	Timestamp   int64                     `json:"timestamp"`
+	Color       int                       `json:"color"`
+	Fields      []DiscordOutputEmbedField `json:"fields"`
+}
+
+type DiscordOutputEmbedField struct {
+	Name   string `json:"name"`
+	Value  string `json:"value"`
+	Inline bool   `json:"inline"`
+}
+
+// Send discord webhook.
+//
+// Options:
+//   - `url`(required) : Webhook URL.
+func (p *DiscordOutput) Send(options map[string]string) error {
+	url := options["url"]
+	if url == "" {
+		return fmt.Errorf("discord output requires `url` option")
+	}
+
+	body, err := json.Marshal(p)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest("POST", url, bytes.NewReader(body))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	res, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+
+	if res.StatusCode != 200 {
+		return fmt.Errorf("server returned status " + strconv.Itoa(res.StatusCode))
+	}
+
+	return nil
+}

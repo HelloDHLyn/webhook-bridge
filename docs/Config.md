@@ -12,7 +12,12 @@ No options required.
 
 ## Output Target
 
+  - Discord
   - Slack
+
+### Discord
+
+  - `url` (required) : Webhook URL.
 
 ### Slack
 

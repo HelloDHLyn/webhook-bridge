@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 )
 
@@ -58,4 +59,18 @@ func parseInput(source string, r *http.Request) (Input, error) {
 		return &input, err
 	}
 	return nil, fmt.Errorf("invalid source name")
+}
+
+func init() {
+	filePath, ok := os.LookupEnv("BRIDGE_LOAD_CONFIG_FROM_FILE")
+	if ok {
+		LoadConfigurationFromFile(filePath)
+		return
+	}
+
+	url, ok := os.LookupEnv("BRIDGE_LOAD_CONFIG_FROM_HTTP")
+	if ok {
+		LoadConfigurationFromHTTP(url)
+		return
+	}
 }
