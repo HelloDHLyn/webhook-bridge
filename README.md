@@ -4,28 +4,19 @@
 
 ## Usage
 
-### Prerequisites
+### Supported Targets
 
-  - Go 1.X
+| Target | Options |
+| --- | --- |
+| Slack | `url` : incoming webhook address |
 
-### Supported Hooks
+### Example 1. Declarative YAML Config
 
-  - Input
-    - Docker Hub
-  - Output
-    - Discord
-    - Slack
-
-### Example 1. Simple way (using docker)
-
-TBD
-
-### Example 2. Normal way
+First, create a configuration file like below.
 
 ```yaml
 ### Version of the configration file template.
 version: '1'
-
 
 ### Configure server for incoming webhooks.
 server:
@@ -35,20 +26,31 @@ server:
   # HTTP port to receive hooks.
   port: 8080
 
-
 ### Configs for integrations.
 bridges:
-  - name: 'example-bridge'
-    input:
-      source: 'docker-hub'
-    output:
-      target: 'slack'
-      options:
-        url: 'https://hooks.slack.com/services/...'
-    converter:
-      name: 'DockerHubToSlack'
+- name: 'example-bridge'
+  input:
+    source: 'docker-hub'
+  output:
+    target: 'slack'
+    options:
+      url: 'https://hooks.slack.com/services/...'
+  converter:
+    json: |
+      {
+        "text": "Docker image {{ .repository.repo_name }} has built successfully."
+      }
 ```
 
+Then run docker container.
+
+```sh
+docker run \
+  -v '/path/to/config.yaml:/etc/config.yaml' \
+  -e 'BRIDGE_CONFIG_PATH=/etc/config.yaml' \
+  -p '8080:8080' \
+  hellodhlyn/webhook-bridge
+```
 
 ## Development
 

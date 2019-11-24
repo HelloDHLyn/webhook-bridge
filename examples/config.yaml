@@ -5,12 +5,15 @@ server:
   port: 8080
 
 bridges:
-  - name: 'example-bridge'
-    input:
-      source: 'docker-hub'
-    output:
-      target: 'slack'
-      options:
-        url: 'https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK_URL'
-    converter:
-      name: 'DockerHubToSlack'
+- name: 'example-bridge'
+  input:
+    source: 'docker-hub'
+  output:
+    target: 'slack'
+    options:
+      url: 'https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK_URL'
+  converter:
+    json: |
+      {
+        "text": "Docker image '{{ .repository.repo_name }}:{{ .push_data.tag }}' built successfully.\n{{ .repository.repo_url }}"
+      }

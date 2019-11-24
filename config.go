@@ -9,10 +9,17 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-var loadedConfig *configuration
+type Config struct {
+	Server struct {
+		PathPrefix string
+		Port       int
+	}
 
-// Configuration contains all information for bridging.
-type configuration struct {
+	Bridges []Bridge
+}
+
+// configYAML contains all information for bridging.
+type configYAML struct {
 	Version string
 
 	Server struct {
@@ -31,56 +38,65 @@ type configuration struct {
 			Options map[string]string
 		}
 		Converter struct {
-			Name string
+			JSON string
 		}
 	}
 }
 
-// LoadConfigurationFromFile reads yaml file and load it.
-//
-// If you set the value of `BRIDGE_LOAD_CONFIG_FROM_FILE` environment variable
-// as a path of the configuration file, this function will called automatically.
-func LoadConfigurationFromFile(filePath string) error {
+// newConfigFromFile reads yaml file and load it.
+func newConfigFromFile(filePath string) (*Config, error) {
 	body, err := ioutil.ReadFile(filePath)
 	if err != nil {
-		return err
+		return nil, err
 	}
-
-	err = yaml.Unmarshal(body, &loadedConfig)
-	if err != nil {
-		return err
-	}
-
-	fmt.Printf("Loaded %d bridge(s) from the file!\n", len(loadedConfig.Bridges))
-	return nil
+	return parseYAML(body)
 }
 
-// LoadConfigurationFromHTTP downloads yaml file with HTTP GET request from
-// the URL, and load it as configuration.
-//
-// If you set the value of `BRIDGE_LOAD_CONFIG_FROM_HTTP` environment variable
-// as a URL to load configurations, this function will called automatically.
-func LoadConfigurationFromHTTP(url string) error {
+// newConfigFromHTTP downloads yaml file with HTTP GET request from the URL,
+// and load it as configuration.
+func newConfigFromHTTP(url string) (config *Config, err error) {
 	client := &http.Client{}
 	res, err := client.Get(url)
 	if err != nil {
-		return err
+		return
 	}
 	if res.StatusCode >= 300 {
-		return fmt.Errorf("server returned status " + strconv.Itoa(res.StatusCode))
+		err = fmt.Errorf("server returned status " + strconv.Itoa(res.StatusCode))
+		return
 	}
 
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		return err
+		return
 	}
-	err = yaml.Unmarshal(body, &loadedConfig)
+	return parseYAML(body)
+}
+
+func parseYAML(body []byte) (config *Config, err error) {
+	var cfgYAML configYAML
+	err = yaml.Unmarshal(body, &cfgYAML)
 	if err != nil {
-		return err
+		return
 	}
 
-	fmt.Println(loadedConfig)
+	var bridges []Bridge
+	for _, b := range cfgYAML.Bridges {
+		input := GetInputSource(b.Input.Source)
+		output := GetOutputTarget(b.Output.Target, b.Output.Options)
 
-	fmt.Printf("Loaded %d bridge(s) from the http request!\n", len(loadedConfig.Bridges))
-	return nil
+		var converter Converter
+		if b.Converter.JSON != "" {
+			converter = NewJSONConverter([]byte(b.Converter.JSON))
+		}
+
+		bridges = append(bridges, NewBridge(b.Name, input, output, converter))
+	}
+
+	return &Config{
+		Server: struct {
+			PathPrefix string
+			Port       int
+		}{cfgYAML.Server.PathPrefix, cfgYAML.Server.Port},
+		Bridges: bridges,
+	}, nil
 }

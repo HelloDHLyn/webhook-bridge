@@ -1,51 +1,43 @@
 package bridge
 
 import (
-	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
+	"time"
 )
 
-type Input interface {
-	ParseHTTPRequest(r *http.Request) error
+type InputSource interface {
+	GetInput(r *http.Request) (*Input, error)
 }
 
-type DockerHubInput struct {
-	CallbackURL string `json:"callback_url"`
-	PushData    struct {
-		Images   []string `json:"images"`
-		PushedAt float64  `json:"pushed_at"`
-		Pusher   string   `json:"pusher"`
-		Tag      string   `json:"tag"`
-	} `json:"push_data"`
-	Repository struct {
-		CommentCount    int     `json:"comment_count"`
-		DateCreated     float64 `json:"date_created"`
-		Description     string  `json:"description"`
-		Dockerfile      string  `json:"dockerfile"`
-		FullDescription string  `json:"full_description"`
-		IsOfficial      bool    `json:"is_official"`
-		IsPrivate       bool    `json:"is_private"`
-		IsTrusted       bool    `json:"is_trusted"`
-		Name            string  `json:"name"`
-		Namespace       string  `json:"namespace"`
-		Owner           string  `json:"owner"`
-		RepoName        string  `json:"repo_name"`
-		RepoURL         string  `json:"repo_url"`
-		StarCount       int     `json:"star_count"`
-		Status          string  `json:"status"`
-	} `json:"repository"`
-}
-
-func (p *DockerHubInput) ParseHTTPRequest(r *http.Request) error {
-	if r.Method != "POST" {
-		return fmt.Errorf("invalid http method: " + r.Method)
+func GetInputSource(source string) InputSource {
+	if source == "docker-hub" {
+		return &DockerHubInputSource{}
 	}
-
-	err := json.NewDecoder(r.Body).Decode(&p)
-	if err != nil {
-		return err
-	}
-
 	return nil
+}
+
+type DockerHubInputSource struct {
+	options map[string]string
+}
+
+func (src *DockerHubInputSource) GetInput(r *http.Request) (*Input, error) {
+	if r.Method != "POST" {
+		return nil, fmt.Errorf("invalid http method: " + r.Method)
+	}
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	now := time.Now()
+	return &Input{Source: src, CalledAt: &now, Payload: body}, nil
+}
+
+type Input struct {
+	Source   InputSource
+	CalledAt *time.Time
+	Payload  []byte
 }
